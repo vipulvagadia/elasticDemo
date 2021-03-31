@@ -342,8 +342,14 @@ public class ElasticController {
 	}// -----------------------------------------------------------------------------------------------------------------
 		// delete index
 	@DeleteMapping("deletein")
-	public AcknowledgedResponse deleteIndex(@RequestParam String index) throws IOException {
+	public Object deleteIndex(@RequestParam String index) throws IOException {
 
+		GetIndexRequest grequest = new GetIndexRequest(index);
+		boolean b=client.indices().exists(grequest, RequestOptions.DEFAULT);
+		if(b == false) {
+			return "index is not avelabal";
+		}
+		
 		DeleteIndexRequest request = new DeleteIndexRequest(index);
 		request.timeout(TimeValue.timeValueMinutes(2));
 		request.timeout("2m");
@@ -500,13 +506,19 @@ public class ElasticController {
 	/// -----------------------------------------------------------------------------------------------------
 	/// index creating
 	@PostMapping("/file")
-	public CreateIndexResponse files(@RequestParam String index)
-			throws JsonParseException, JsonMappingException, IOException {
+	public Object files(@RequestParam String index)
+	                         throws JsonParseException, JsonMappingException, IOException {
+		
+		GetIndexRequest grequest = new GetIndexRequest(index);
+		boolean b=client.indices().exists(grequest, RequestOptions.DEFAULT);
+		if(b == true) {
+			return "index allrady criated";
+		}
 		CreateIndexRequest request = new CreateIndexRequest(index);
 		request.settings(Settings.builder().put("index.number_of_shards", 1).put("index.number_of_replicas", 2));
 		JsonNode node = new ObjectMapper().readValue(new File("E:\\vipul\\files\\indexType.json"), JsonNode.class);
 		request.mapping(node.toString(), XContentType.JSON);
-		request.alias(new Alias("twitter_alias").filter(QueryBuilders.termQuery("user", "kimchy")));
+		//request.alias(new Alias("twitter_alias").filter(QueryBuilders.termQuery("user", "kimchy")));
 		CreateIndexResponse createIndexResponse = client.indices().create(request, RequestOptions.DEFAULT);
 		return createIndexResponse;
 	}
